@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Archaic Spelling Updater</title>
+  <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:        #1a1208;
+      --parchment:  #f5edda;
+      --aged:       #e8d9b8;
+      --sepia:      #b08c5a;
+      --rust:       #8b3a2a;
+      --moss:       #3d5a3e;
+      --shadow:     rgba(26,18,8,0.18);
+      --glass:      rgba(245,237,218,0.82);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Crimson Pro', Georgia, serif;
+      background-color: #2a1f0e;
+      background-image:
+        url('https://reformedretrieval.wordpress.com/wp-content/uploads/2022/09/devils-bridge-header-1.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 16px 60px;
+    }
+
+    /* Overlay to darken/warm the background photo */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(160deg,
+        rgba(20,12,4,0.55) 0%,
+        rgba(40,24,8,0.45) 50%,
+        rgba(15,10,4,0.60) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 860px;
+      background: var(--glass);
+      backdrop-filter: blur(6px) saturate(1.2);
+      border: 1px solid rgba(176,140,90,0.45);
+      border-radius: 3px;
+      box-shadow:
+        0 2px 0 rgba(176,140,90,0.3),
+        0 8px 40px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,245,220,0.6);
+      padding: 48px 52px 52px;
+    }
+
+    /* Decorative corner rule */
+    .container::before, .container::after {
+      content: '';
+      position: absolute;
+      width: 60px; height: 60px;
+      border-color: var(--sepia);
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .container::before { top: 12px; left: 12px; border-width: 2px 0 0 2px; }
+    .container::after  { bottom: 12px; right: 12px; border-width: 0 2px 2px 0; }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .title-ornament {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--sepia);
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-family: 'IM Fell English', Georgia, serif;
+      font-size: clamp(26px, 4vw, 42px);
+      font-weight: 400;
+      color: var(--ink);
+      line-height: 1.15;
+      letter-spacing: 0.01em;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--rust);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 18px 0 0;
+      opacity: 0.55;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--sepia);
+    }
+    .divider span {
+      font-size: 18px;
+      color: var(--sepia);
+      line-height: 1;
+    }
+
+    /* Status bar */
+    #status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--sepia);
+      font-style: italic;
+      min-height: 22px;
+      margin-bottom: 22px;
+      transition: color 0.3s;
+    }
+    #status-bar.error { color: var(--rust); }
+    #status-bar.success { color: var(--moss); }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--sepia);
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    #status-bar.error .status-dot { background: var(--rust); }
+    #status-bar.success .status-dot { background: var(--moss); }
+
+    label {
+      display: block;
+      font-family: 'IM Fell English', serif;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--sepia);
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 210px;
+      padding: 14px 16px;
+      font-family: 'Crimson Pro', Georgia, serif;
+      font-size: 16px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: rgba(255,250,235,0.88);
+      border: 1px solid rgba(176,140,90,0.5);
+      border-radius: 2px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      box-shadow: inset 0 1px 4px rgba(26,18,8,0.08);
+    }
+    textarea:focus {
+      border-color: var(--sepia);
+      box-shadow: inset 0 1px 4px rgba(26,18,8,0.1), 0 0 0 3px rgba(176,140,90,0.15);
+    }
+    textarea[readonly] {
+      background: rgba(232,217,184,0.55);
+      cursor: default;
+    }
+
+    .textarea-wrap {
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .char-count {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      font-size: 11px;
+      color: var(--sepia);
+      opacity: 0.65;
+      pointer-events: none;
+      font-style: italic;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 32px;
+      align-items: center;
+    }
+
+    button {
+      font-family: 'IM Fell English', serif;
+      font-size: 15px;
+      padding: 11px 28px;
+      border: none;
+      border-radius: 2px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    }
+    button:active { transform: translateY(1px); }
+
+    #btn-update {
+      background: var(--rust);
+      color: var(--parchment);
+      box-shadow: 0 2px 8px rgba(139,58,42,0.35);
+    }
+    #btn-update:hover { background: #a04030; box-shadow: 0 3px 12px rgba(139,58,42,0.45); }
+    #btn-update:disabled { background: #c0a080; cursor: not-allowed; box-shadow: none; }
+
+    #btn-copy {
+      background: transparent;
+      color: var(--moss);
+      border: 1px solid var(--moss);
+      box-shadow: none;
+    }
+    #btn-copy:hover { background: rgba(61,90,62,0.1); }
+    #btn-copy:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #btn-clear {
+      background: transparent;
+      color: var(--sepia);
+      border: 1px solid rgba(176,140,90,0.45);
+      margin-left: auto;
+    }
+    #btn-clear:hover { background: rgba(176,140,90,0.12); }
+
+    /* Stats strip */
+    #stats-strip {
+      display: none;
+      background: rgba(61,90,62,0.1);
+      border: 1px solid rgba(61,90,62,0.25);
+      border-radius: 2px;
+      padding: 10px 16px;
+      margin-bottom: 24px;
+      font-size: 14px;
+      color: var(--moss);
+      font-style: italic;
+    }
+    #stats-strip.visible { display: block; }
+
+    /* Progress bar */
+    #progress-wrap {
+      display: none;
+      margin-bottom: 10px;
+    }
+    #progress-wrap.visible { display: block; }
+    #progress-track {
+      height: 3px;
+      background: rgba(176,140,90,0.2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--rust);
+      transition: width 0.3s ease;
+      border-radius: 2px;
+    }
+    #progress-fill.indeterminate {
+      animation: indeterminate 1.4s ease-in-out infinite;
+    }
+    @keyframes indeterminate {
+      0%   { width: 0%;   margin-left: 0%; }
+      50%  { width: 60%;  margin-left: 20%; }
+      100% { width: 0%;   margin-left: 100%; }
+    }
+
+    footer {
+      margin-top: 36px;
+      text-align: center;
+      border-top: 1px solid rgba(176,140,90,0.3);
+      padding-top: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .support-btn {
+      display: inline-block;
+      font-family: 'IM Fell English', serif;
+      font-size: 14px;
+      color: var(--parchment);
+      background: var(--sepia);
+      padding: 10px 24px;
+      border-radius: 2px;
+      text-decoration: none;
+      letter-spacing: 0.06em;
+      transition: background 0.2s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .support-btn:hover { background: #9a7540; }
+
+    .footer-note {
+      font-size: 13px;
+      color: var(--sepia);
+      font-style: italic;
+      opacity: 0.75;
+    }
+
+    /* Wordlist info chip */
+    #wordlist-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--sepia);
+      font-style: italic;
+      margin-left: 6px;
+      opacity: 0.85;
+    }
+
+    @media (max-width: 600px) {
+      .container { padding: 32px 22px 40px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      #btn-clear { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <span class="title-ornament">✦ &nbsp; Modernisation Tool &nbsp; ✦</span>
+    <h1>Archaic <em>Spelling</em> Updater</h1>
+    <div class="divider"><span>❧</span></div>
+  </header>
+
+  <div id="status-bar">
+    <div class="status-dot"></div>
+    <span id="status-text">Loading wordlist…</span>
+    <span id="wordlist-chip"></span>
+  </div>
+
+  <label for="input-text">Enter your text</label>
+  <div class="textarea-wrap">
+    <textarea id="input-text" placeholder="Paste your text here — handles 35,000+ words with ease…" spellcheck="false"></textarea>
+    <span class="char-count" id="in-count">0 words</span>
+  </div>
+
+  <div id="progress-wrap">
+    <div id="progress-track"><div id="progress-fill indeterminate" id="progress-fill"></div></div>
+  </div>
+
+  <div class="actions">
+    <button id="btn-update" disabled>Update Spelling</button>
+    <button id="btn-copy" disabled>Copy Result</button>
+    <button id="btn-clear">Clear All</button>
+  </div>
+
+  <div id="stats-strip"></div>
+
+  <label for="output-text">Updated text</label>
+  <div class="textarea-wrap">
+    <textarea id="output-text" readonly placeholder="Modernised text appears here after processing…" spellcheck="false"></textarea>
+    <span class="char-count" id="out-count">0 words</span>
+  </div>
+
+  <footer>
+    <a href="https://buymeacoffee.com/reformedretrieval" class="support-btn" target="_blank" rel="noopener">
+      ☕ &nbsp; Help Support My Work
+    </a>
+    <p class="footer-note">All processing happens in your browser — no data is sent to any server.</p>
+  </footer>
+</div>
+
+<script>
+// ─── Configuration ────────────────────────────────────────────────────────────
+const WORDLIST_URL = 'wordlist.csv';   // Relative path — same repo as index.html
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let replacements = {};   // { archaic_lower: { key: original_key, modern: string } }
+let wordlistReady = false;
+
+// ─── DOM refs ────────────────────────────────────────────────────────────────
+const inputEl     = document.getElementById('input-text');
+const outputEl    = document.getElementById('output-text');
+const btnUpdate   = document.getElementById('btn-update');
+const btnCopy     = document.getElementById('btn-copy');
+const btnClear    = document.getElementById('btn-clear');
+const statusText  = document.getElementById('status-text');
+const statusBar   = document.getElementById('status-bar');
+const statusDot   = statusBar.querySelector('.status-dot');
+const wordlistChip = document.getElementById('wordlist-chip');
+const statsStrip  = document.getElementById('stats-strip');
+const progressWrap = document.getElementById('progress-wrap');
+const progressFill = document.getElementById('progress-fill');
+const inCount     = document.getElementById('in-count');
+const outCount    = document.getElementById('out-count');
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function countWords(text) {
+  const t = text.trim();
+  if (!t) return 0;
+  return t.split(/\s+/).length;
+}
+
+function setStatus(msg, type = '') {
+  statusText.textContent = msg;
+  statusBar.className = type;
+  if (type) statusBar.classList.add(type);
+}
+
+function showProgress(on) {
+  progressWrap.classList.toggle('visible', on);
+  if (on) {
+    progressFill.style.width = '0%';
+    progressFill.classList.add('indeterminate');
+  } else {
+    progressFill.classList.remove('indeterminate');
+    progressFill.style.width = '100%';
+  }
+}
+
+// ─── Unicode NFC normalisation ────────────────────────────────────────────────
+function nfc(str) {
+  return str.normalize('NFC');
+}
+
+// ─── HTML entity decode (mirrors Python's html.unescape) ─────────────────────
+function htmlUnescape(str) {
+  const ta = document.createElement('textarea');
+  ta.innerHTML = str;
+  return ta.value;
+}
+
+// ─── CSV parser (handles quoted fields, comma-inside-quotes) ──────────────────
+function parseCSV(text) {
+  const rows = [];
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    const row = [];
+    let field = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i+1] === '"') { field += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        row.push(field);
+        field = '';
+      } else {
+        field += ch;
+      }
+    }
+    row.push(field);
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ─── Load wordlist ────────────────────────────────────────────────────────────
+async function loadWordlist() {
+  try {
+    const resp = await fetch(WORDLIST_URL);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    const rows = parseCSV(text);
+    let count = 0;
+    for (const row of rows) {
+      if (row.length < 2) continue;
+      const archaic = nfc(row[0].trim());
+      const modern  = nfc(row[1].trim());
+      if (!archaic || !modern) continue;
+      replacements[archaic.toLowerCase()] = { key: archaic, modern };
+      count++;
+    }
+    wordlistReady = true;
+    setStatus('Wordlist loaded.', 'success');
+    wordlistChip.textContent = `(${count.toLocaleString()} entries)`;
+    btnUpdate.disabled = false;
+  } catch (err) {
+    setStatus(`Could not load wordlist.csv — ${err.message}`, 'error');
+    wordlistChip.textContent = '';
+    console.error(err);
+  }
+}
+
+// ─── Core text functions (mirrors Python logic exactly) ───────────────────────
+
+function preserveCase(original, replacement) {
+  if (original === original.toUpperCase() && original !== original.toLowerCase()) {
+    return replacement.toUpperCase();
+  }
+  if (original[0] === original[0].toUpperCase() && original[0] !== original[0].toLowerCase()) {
+    return replacement[0].toUpperCase() + replacement.slice(1).toLowerCase();
+  }
+  return replacement.toLowerCase();
+}
+
+function removeWordBreakingHyphens(text) {
+  // Joins hyphenated word-breaks but preserves em/en dashes (— –)
+  // Python: r'(\w+)-(\w+)' with join_words
+  return text.replace(/(\w+)-(\w+)/g, (_, a, b) => a + b);
+}
+
+function buildPattern(reps) {
+  // Sort by length descending (longest match first) — mirrors Python sort
+  const keys = Object.values(reps)
+    .map(v => v.key)
+    .sort((a, b) => b.length - a.length);
+
+  const escaped = keys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  return new RegExp('\\b(' + escaped.join('|') + ')\\b', 'gi');
+}
+
+function processText(inputText) {
+  if (!Object.keys(replacements).length) return inputText;
+
+  // Step 1 — Remove word-breaking hyphens
+  let content = removeWordBreakingHyphens(inputText);
+
+  // Step 2 — NFC normalise
+  content = nfc(content);
+
+  // Step 3 — HTML unescape
+  content = htmlUnescape(content);
+
+  // Step 4 — Build regex and replace
+  const pattern = buildPattern(replacements);
+  let changeCount = 0;
+
+  const result = content.replace(pattern, (match) => {
+    const lower = match.toLowerCase();
+    const entry = replacements[lower];
+    if (!entry) return match;   // shouldn't happen, but guard
+    changeCount++;
+    return preserveCase(match, entry.modern);
+  });
+
+  return { result, changeCount };
+}
+
+// ─── Event handlers ───────────────────────────────────────────────────────────
+
+inputEl.addEventListener('input', () => {
+  inCount.textContent = countWords(inputEl.value) + ' words';
+});
+
+btnUpdate.addEventListener('click', async () => {
+  const input = inputEl.value;
+  if (!input.trim()) {
+    setStatus('Please enter some text first.', 'error');
+    return;
+  }
+  if (!wordlistReady) {
+    setStatus('Wordlist is not yet loaded.', 'error');
+    return;
+  }
+
+  btnUpdate.disabled = true;
+  showProgress(true);
+  setStatus('Processing…');
+  statsStrip.classList.remove('visible');
+
+  // Yield to browser to paint progress bar before heavy work
+  await new Promise(r => setTimeout(r, 30));
+
+  const { result, changeCount } = processText(input);
+
+  outputEl.value = result;
+  outCount.textContent = countWords(result) + ' words';
+
+  showProgress(false);
+  btnUpdate.disabled = false;
+  btnCopy.disabled = false;
+
+  setStatus('Done.', 'success');
+  statsStrip.classList.add('visible');
+  statsStrip.innerHTML =
+    `✦ &nbsp; <strong>${changeCount.toLocaleString()}</strong> replacement${changeCount !== 1 ? 's' : ''} made` +
+    ` across <strong>${countWords(result).toLocaleString()}</strong> words.`;
+});
+
+btnCopy.addEventListener('click', async () => {
+  if (!outputEl.value) return;
+  try {
+    await navigator.clipboard.writeText(outputEl.value);
+    const prev = btnCopy.textContent;
+    btnCopy.textContent = 'Copied ✓';
+    setTimeout(() => { btnCopy.textContent = prev; }, 1800);
+  } catch {
+    outputEl.select();
+    document.execCommand('copy');
+  }
+});
+
+btnClear.addEventListener('click', () => {
+  inputEl.value = '';
+  outputEl.value = '';
+  inCount.textContent = '0 words';
+  outCount.textContent = '0 words';
+  statsStrip.classList.remove('visible');
+  btnCopy.disabled = true;
+  setStatus('Wordlist loaded.', 'success');
+});
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+loadWordlist();
+</script>
+</body>
+</html>
