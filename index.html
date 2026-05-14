@@ -480,8 +480,9 @@ async function loadWordlist() {
     let count = 0;
     for (const row of rows) {
       if (row.length < 2) continue;
-      const archaic = nfc(row[0].trim());
-      const modern  = nfc(row[1].trim());
+      const clean   = s => nfc(s.trim().replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF\u206A-\u206F]/g, ""));
+      const archaic = clean(row[0]);
+      const modern  = clean(row[1]);
       if (!archaic || !modern) continue;
       replacements[archaic.toLowerCase()] = { key: archaic, modern };
       count++;
