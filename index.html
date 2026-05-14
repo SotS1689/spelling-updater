@@ -523,7 +523,7 @@ function buildPattern(reps) {
     .sort((a, b) => b.length - a.length);
 
   const escaped = keys.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  return new RegExp('\\b(' + escaped.join('|') + ')\\b', 'gi');
+  return new RegExp('(?<!\\w)(' + escaped.join('|') + ')(?!\\w)', 'gi');
 }
 
 function processText(inputText) {
